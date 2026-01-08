@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/base :: html(title='Rapports & Statistiques | SIGTMA', activePage='rapports', pageTitle='Rapports & Statistiques')}">
+
+<head>
+</head>
+
+<body>
+    <div th:fragment="content">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold text-forest mb-1">Analytique & Rapports</h4>
+                <p class="text-muted extra-small">Statistiques détaillées de la collection documentaire.</p>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 rounded-4 text-center transition-hover">
+                    <p class="text-muted extra-small fw-bold text-uppercase mb-2">Total Archivé</p>
+                    <h1 class="fw-bold text-forest display-5 mb-0" id="statArchived">0</h1>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 rounded-4 text-center transition-hover">
+                    <p class="text-muted extra-small fw-bold text-uppercase mb-2">Thèses Validées</p>
+                    <h1 class="fw-bold text-purple display-5 mb-0" id="statTheses">0</h1>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 rounded-4 text-center transition-hover">
+                    <p class="text-muted extra-small fw-bold text-uppercase mb-2">Mémoires Validés</p>
+                    <h1 class="fw-bold text-primary display-5 mb-0" id="statMemoires">0</h1>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 rounded-4 text-center transition-hover">
+                    <p class="text-muted extra-small fw-bold text-uppercase mb-2">En Attente</p>
+                    <h1 class="fw-bold text-warning display-5 mb-0" id="statPending">0</h1>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- Distribution par Type -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                    <h6 class="fw-bold text-forest mb-4"><i class="fas fa-chart-pie me-2 opacity-50"></i>Dépôts par Type
+                    </h6>
+                    <div style="height: 250px;">
+                        <canvas id="chartTypeDist"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Répartition par Filière -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                    <h6 class="fw-bold text-forest mb-4"><i class="fas fa-chart-bar me-2 opacity-50"></i>Performance par
+                        Filière</h6>
+                    <div style="height: 250px;">
+                        <canvas id="chartFiliere"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Breakdown -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+            <div class="card-header bg-white py-3 border-0">
+                <h6 class="fw-bold mb-0 text-forest">Breakdown Annuel Détaillé</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 text-secondary extra-small fw-bold border-0">ANNÉE</th>
+                            <th class="text-center text-secondary extra-small fw-bold border-0">MÉMOIRES</th>
+                            <th class="text-center text-secondary extra-small fw-bold border-0">THÈSES</th>
+                            <th class="text-center text-secondary extra-small fw-bold border-0">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableYearlyDetail">
+                        <!-- Filled via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <style>
+            .bg-memoire {
+                background-color: #e0f2fe;
+                color: #0369a1;
+                border: 1px solid #bae6fd;
+            }
+
+            .bg-these {
+                background-color: #f3e8ff;
+                color: #7e22ce;
+                border: 1px solid #e9d5ff;
+            }
+
+            .bg-total {
+                background-color: #065f46;
+                color: #ffffff;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+
+            .text-purple {
+                color: #7e22ce !important;
+            }
+
+            .transition-hover:hover {
+                transform: translateY(-5px);
+                transition: all 0.3s ease;
+            }
+        </style>
+
+        <script>
+            let typeChart, filiereChart;
+
+            document.addEventListener('DOMContentLoaded', () => {
+                loadSummary();
+                loadYearlyDetail();
+                initCharts();
+            });
+
+            function animateValue(id, start, end, duration) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (start === end) {
+                    el.innerHTML = end.toLocaleString();
+                    return;
+                }
+                let current = start;
+                let range = end - start;
+                let increment = end > start ? 1 : -1;
+                let stepTime = Math.abs(Math.floor(duration / range));
+                let timer = setInterval(function () {
+                    current += increment;
+                    el.innerHTML = current.toLocaleString();
+                    if (current == end) clearInterval(timer);
+                }, stepTime || 1);
+            }
+
+            function loadSummary() {
+                fetch('/api/bibliothecaire/stats/summary')
+                    .then(res => res.json())
+                    .then(data => {
+                        animateValue("statArchived", 0, data.archived, 1000);
+                        animateValue("statTheses", 0, data.totalTheses, 1000);
+                        animateValue("statMemoires", 0, data.totalMemoires, 1000);
+                        animateValue("statPending", 0, data.pending, 1000);
+                    });
+            }
+
+            function loadYearlyDetail() {
+                fetch('/api/bibliothecaire/stats/yearly-detail')
+                    .then(res => res.json())
+                    .then(data => {
+                        const tbody = document.getElementById('tableYearlyDetail');
+                        tbody.innerHTML = '';
+                        data.sort((a, b) => b.annee - a.annee).forEach(y => {
+                            tbody.innerHTML += `
+                                <tr class="transition-hover">
+                                    <td class="ps-4 fw-bold text-forest fs-5">${y.annee}</td>
+                                    <td class="text-center"><span class="badge bg-memoire rounded-pill px-4 fs-6">${y.memoires.toLocaleString()}</span></td>
+                                    <td class="text-center"><span class="badge bg-these rounded-pill px-4 fs-6">${y.theses.toLocaleString()}</span></td>
+                                    <td class="text-center"><span class="badge bg-total rounded-pill px-4 fs-5 fw-bold">${y.total.toLocaleString()}</span></td>
+                                </tr>
+                            `;
+                        });
+                    });
+            }
+
+            function initCharts() {
+                const ctxType = document.getElementById('chartTypeDist').getContext('2d');
+                fetch('/api/bibliothecaire/stats/distribution')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (typeChart) typeChart.destroy();
+                        typeChart = new Chart(ctxType, {
+                            type: 'doughnut',
+                            data: {
+                                labels: data.map(d => d.type),
+                                datasets: [{
+                                    data: data.map(d => d.count),
+                                    backgroundColor: ['#7e22ce', '#0369a1'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
+                        });
+                    });
+
+                const ctxFiliere = document.getElementById('chartFiliere').getContext('2d');
+                fetch('/api/bibliothecaire/stats/reports/filiere')
+                    .then(res => res.json())
+                    .then(data => {
+                        const labels = Object.keys(data);
+                        const values = Object.values(data);
+                        if (filiereChart) filiereChart.destroy();
+                        filiereChart = new Chart(ctxFiliere, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Dépôts',
+                                    data: values,
+                                    backgroundColor: '#10b981',
+                                    borderRadius: 6
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: { y: { beginAtZero: true, grid: { color: '#f1f1f1' } }, x: { grid: { display: false } } }
+                            }
+                        });
+                    });
+            }
+        </script>
+    </div>
+</body>
+
+</html>

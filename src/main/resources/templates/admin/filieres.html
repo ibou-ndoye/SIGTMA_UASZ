@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/base :: html(title='Filières | SIGTMA', activePage='filieres', pageTitle='Gestion des Filières')}">
+
+<head></head>
+
+<body>
+    <div th:fragment="content">
+        <div class="card p-4 shadow-sm border-0 rounded-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-forest">Filières & Départements</h5>
+                    <p class="small text-muted mb-0">Gérez les filières académiques de l'université</p>
+                </div>
+                <div class="d-flex gap-3 align-items-center">
+                    <div class="position-relative">
+                        <i
+                            class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted opacity-50"></i>
+                        <input type="text" id="searchInput" class="form-control rounded-pill ps-5 border-light bg-light"
+                            placeholder="Rechercher..." style="width: 250px;">
+                    </div>
+                    <button class="btn btn-emerald rounded-pill px-4 shadow-sm" onclick="openCreateModal()">
+                        <i class="fas fa-plus me-2"></i> Ajouter une Filière
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive px-2">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3 text-secondary text-uppercase extra-small fw-bold border-0">ID</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">Nom de la Filière
+                            </th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">UFR</th>
+                            <th class="text-end pe-3 text-secondary text-uppercase extra-small fw-bold border-0">Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableFilieres">
+                        <tr>
+                            <td colspan="3" class="text-center py-5 text-muted">
+                                <div class="spinner-border spinner-border-sm text-emerald me-2"></div> Chargement des
+                                filières...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Filière (Création & Modification) -->
+        <div class="modal fade" id="modalFiliere" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold text-forest" id="modalTitle">Ajouter une Filière</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formFiliere">
+                            <input type="hidden" name="id" id="filiereId">
+                            <div class="mb-3">
+                                <label class="small fw-medium mb-1">Nom de la Filière</label>
+                                <input type="text" name="nom" id="filiereNom" class="form-control rounded-3"
+                                    placeholder="Ex: Informatique" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="small fw-medium mb-1">Nom de l'UFR</label>
+                                <input type="text" name="nomUfr" id="filiereUfr" class="form-control rounded-3"
+                                    placeholder="Ex: UFR DES SCIENCES ET TECHNOLOGIES">
+                            </div>
+                            <div class="text-end mt-4">
+                                <button type="button" class="btn btn-light rounded-pill px-4 me-2"
+                                    data-bs-dismiss="modal">Annuler</button>
+                                <button type="submit"
+                                    class="btn btn-emerald rounded-pill px-4 shadow-sm text-white">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            let filieres = [];
+            let filiereModal;
+
+            document.addEventListener('DOMContentLoaded', () => {
+                filiereModal = new bootstrap.Modal(document.getElementById('modalFiliere'));
+                loadFilieres();
+
+                document.getElementById('formFiliere').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    saveFiliere(new FormData(this));
+                });
+
+                document.getElementById('searchInput').addEventListener('input', function (e) {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = filieres.filter(f => f.nom.toLowerCase().includes(term));
+                    renderFilieresTable(filtered);
+                });
+            });
+
+            function loadFilieres() {
+                fetch('/api/filieres')
+                    .then(res => res.json())
+                    .then(data => {
+                        filieres = data;
+                        renderFilieresTable();
+                    });
+            }
+
+            function renderFilieresTable(data = filieres) {
+                const tbody = document.getElementById('tableFilieres');
+                tbody.innerHTML = '';
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Aucune filière trouvée.</td></tr>';
+                    return;
+                }
+                data.forEach(f => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="small text-muted fw-bold">#${f.id}</td>
+                            <td class="fw-medium text-dark">${f.nom}</td>
+                            <td><span class="badge border text-dark bg-light extra-small">${f.nomUfr || '-'}</span></td>
+                            <td class="text-end">
+                                <button onclick="openEditModal(${f.id})" class="btn btn-icon btn-light text-muted border-0 me-2 shadow-sm"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteFiliere(${f.id})" class="btn btn-icon btn-light text-danger border-0 shadow-sm"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            function openCreateModal() {
+                document.getElementById('formFiliere').reset();
+                document.getElementById('filiereId').value = '';
+                document.getElementById('modalTitle').innerText = 'Ajouter une Filière';
+                filiereModal.show();
+            }
+
+            function openEditModal(id) {
+                const f = filieres.find(item => item.id === id);
+                if (!f) return;
+
+                document.getElementById('filiereId').value = f.id;
+                document.getElementById('filiereNom').value = f.nom;
+                document.getElementById('filiereUfr').value = f.nomUfr || '';
+                document.getElementById('modalTitle').innerText = 'Modifier la Filière';
+                filiereModal.show();
+            }
+
+            function saveFiliere(formData) {
+                const id = formData.get('id');
+                const data = Object.fromEntries(formData.entries());
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/api/filieres/${id}` : '/api/filieres';
+
+                fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(res => {
+                    if (res.ok) {
+                        filiereModal.hide();
+                        loadFilieres();
+                    } else {
+                        alert('Une erreur est survenue lors de l\'enregistrement.');
+                    }
+                });
+            }
+
+            function deleteFiliere(id) {
+                if (!confirm('Êtes-vous sûr de vouloir supprimer cette filière ?')) return;
+
+                fetch(`/api/filieres/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (res.ok) loadFilieres();
+                        else alert('Erreur lors de la suppression.');
+                    });
+            }
+        </script>
+    </div>
+</body>
+
+</html>

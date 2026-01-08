@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html th:fragment="html(title, activePage, pageTitle)" xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="fr">
+
+<head th:fragment="header">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">SIGTMA</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom CSS -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body class="radiant-blur">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse" th:fragment="sidebar">
+                <div class="position-sticky pt-3 flex-grow-1 d-flex flex-column">
+                    <div class="px-4 py-4 mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-white bg-opacity-20 p-2 rounded-3 me-3">
+                                <i class="fas fa-graduation-cap text-white fs-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-white">SIGTMA</h5>
+                                <p class="text-white-50 extra-small mb-0">Portail UASZ</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="nav flex-column mb-auto">
+                        <li class="nav-item mb-2" sec:authorize="hasRole('ADMINISTRATEUR')">
+                            <a class="nav-link" th:href="@{/admin/dashboard}"
+                                th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                                <i class="fas fa-th-large"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2" sec:authorize="hasRole('ADMINISTRATEUR')">
+                            <a class="nav-link" th:href="@{/admin/users}"
+                                th:classappend="${activePage == 'users' ? 'active' : ''}">
+                                <i class="fas fa-users"></i> Utilisateurs
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2" sec:authorize="hasRole('ADMINISTRATEUR')">
+                            <a class="nav-link" th:href="@{/admin/filieres}"
+                                th:classappend="${activePage == 'filieres' ? 'active' : ''}">
+                                <i class="fas fa-university"></i> Filières
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2" sec:authorize="hasRole('ADMINISTRATEUR')">
+                            <a class="nav-link" th:href="@{/admin/rapports}"
+                                th:classappend="${activePage == 'reports' ? 'active' : ''}">
+                                <i class="fas fa-chart-pie"></i> Rapports
+                            </a>
+                        </li>
+
+                        <!-- Bibliothécaire Links -->
+                        <li class="nav-item mb-2" sec:authorize="hasRole('BIBLIOTHECAIRE')">
+                            <a class="nav-link" th:href="@{/bibliothecaire/dashboard}"
+                                th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                                <i class="fas fa-check-circle"></i> Indexation
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2" sec:authorize="hasRole('BIBLIOTHECAIRE')">
+                            <a class="nav-link" th:href="@{/bibliothecaire/catalogue}"
+                                th:classappend="${activePage == 'catalogue' ? 'active' : ''}">
+                                <i class="fas fa-layer-group"></i> Catalogue
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2" sec:authorize="hasRole('BIBLIOTHECAIRE')">
+                            <a class="nav-link" th:href="@{/bibliothecaire/rapports}"
+                                th:classappend="${activePage == 'rapports' ? 'active' : ''}">
+                                <i class="fas fa-file-chart-pie"></i> Rapports
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2" sec:authorize="hasRole('BIBLIOTHECAIRE')">
+                            <a class="nav-link" th:href="@{/bibliothecaire/search}"
+                                th:classappend="${activePage == 'search' ? 'active' : ''}">
+                                <i class="fas fa-search"></i> Recherche
+                            </a>
+                        </li>
+
+                        <!-- Aide-Bibliothécaire Links -->
+                        <li class="nav-item mb-2" sec:authorize="hasRole('AIDE_BIBLIOTHECAIRE')">
+                            <a class="nav-link" th:href="@{/aide-bibliothecaire/dashboard}"
+                                th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                                <i class="fas fa-compass"></i> Référentiel
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2" sec:authorize="hasRole('AIDE_BIBLIOTHECAIRE')">
+                            <a class="nav-link" th:href="@{/aide-bibliothecaire/etudiants}"
+                                th:classappend="${activePage == 'etudiants' ? 'active' : ''}">
+                                <i class="fas fa-file-invoice"></i> Liste des Dossiers
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="px-3 mb-4 mt-auto">
+                        <form th:action="@{/logout}" method="post">
+                            <button class="btn btn-outline-light border-0 w-100 text-start ps-3 py-2 rounded-4"
+                                type="submit">
+                                <i class="fas fa-power-off me-2"></i> Déconnexion
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-5">
+                <nav class="navbar navbar-expand-lg navbar-light px-0 py-3 mb-4 sticky-top border-bottom"
+                    th:fragment="navbar">
+                    <div class="container-fluid">
+                        <h4 class="fw-bold mb-0 text-slate-800" th:text="${pageTitle}">Dashboard</h4>
+
+                        <div class="d-flex align-items-center">
+                            <div class="dropdown">
+                                <button class="btn border-0 p-0 d-flex align-items-center" type="button"
+                                    data-bs-toggle="dropdown">
+                                    <div class="text-end me-3 d-none d-sm-block">
+                                        <p class="mb-0 fw-bold text-dark small" sec:authentication="name">User</p>
+                                        <p class="mb-0 text-muted extra-small">Connecté</p>
+                                    </div>
+                                    <div class="avatar-emerald rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                                        style="width: 42px; height: 42px;">
+                                        <i class="fas fa-user-shield"></i>
+                                    </div>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-custom border-0 rounded-4 mt-2 py-2">
+                                    <li><a class="dropdown-item p-3 d-flex align-items-center" href="#">
+                                            <i class="fas fa-user-circle me-3 text-muted"></i>
+                                            <div>
+                                                <p class="mb-0 fw-bold small">Mon Profil</p>
+                                                <p class="mb-0 extra-small text-muted">Gérer vos infos</p>
+                                            </div>
+                                        </a></li>
+                                    <li>
+                                        <hr class="dropdown-divider mx-3">
+                                    </li>
+                                    <li>
+                                        <form th:action="@{/logout}" method="post">
+                                            <button type="submit"
+                                                class="dropdown-item p-3 text-danger d-flex align-items-center">
+                                                <i class="fas fa-power-off me-3"></i>
+                                                <span class="small fw-bold">Déconnexion</span>
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <div th:replace="~{::content}">
+                    <!-- Content injection -->
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+
+</html>
+
+</html>

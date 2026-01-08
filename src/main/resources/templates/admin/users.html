@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/base :: html(title='Utilisateurs | SIGTMA', activePage='users', pageTitle='Gestion des Utilisateurs')}">
+
+<head></head>
+
+<body>
+    <div th:fragment="content">
+        <div class="card p-4 shadow-sm border-0 rounded-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-forest">Comptes Utilisateurs</h5>
+                    <p class="small text-muted mb-0">Gérez les accès du personnel de la bibliothèque</p>
+                </div>
+                <div class="d-flex gap-3 align-items-center">
+                    <div class="position-relative">
+                        <i
+                            class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted opacity-50"></i>
+                        <input type="text" id="searchInput" class="form-control rounded-pill ps-5 border-light bg-light"
+                            placeholder="Rechercher..." style="width: 250px;">
+                    </div>
+                    <button class="btn btn-emerald rounded-pill px-4 shadow-sm" onclick="openCreateModal()">
+                        <i class="fas fa-user-plus me-2"></i> Ajouter un Utilisateur
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive px-2">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3 text-secondary text-uppercase extra-small fw-bold border-0">Identité</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">Email</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">Rôle</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">Téléphone</th>
+                            <th class="text-end pe-3 text-secondary text-uppercase extra-small fw-bold border-0">Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableUsers">
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <div class="spinner-border spinner-border-sm text-emerald me-2"></div> Chargement des
+                                utilisateurs...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Utilisateur (Création & Modification) -->
+        <div class="modal fade" id="modalUser" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold text-forest" id="modalTitle">Créer un Compte</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formUser">
+                            <input type="hidden" name="id" id="userId">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="small fw-medium mb-1">Prénom</label>
+                                    <input type="text" name="prenom" id="userPrenom" class="form-control rounded-3"
+                                        placeholder="Ex: Jean" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-medium mb-1">Nom</label>
+                                    <input type="text" name="nom" id="userNom" class="form-control rounded-3"
+                                        placeholder="Ex: Dupont" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-medium mb-1">Email (Identifiant)</label>
+                                    <input type="email" name="email" id="userEmail" class="form-control rounded-3"
+                                        placeholder="jean.dupont@uasz.sn" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-medium mb-1">Téléphone</label>
+                                    <input type="text" name="telephone" id="userTelephone"
+                                        class="form-control rounded-3" placeholder="77 000 00 00">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-medium mb-1">Sexe</label>
+                                    <select name="sexe" id="userSexe" class="form-select rounded-3">
+                                        <option value="M">Masculin</option>
+                                        <option value="F">Féminin</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-medium mb-1">Rôle Système</label>
+                                    <select name="role" id="userRole" class="form-select rounded-3" required>
+                                        <option value="ADMINISTRATEUR">Administrateur</option>
+                                        <option value="BIBLIOTHECAIRE">Bibliothécaire</option>
+                                        <option value="AIDE_BIBLIOTHECAIRE">Aide-Bibliothécaire</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="small fw-medium mb-1">Adresse</label>
+                                    <input type="text" name="adresse" id="userAdresse" class="form-control rounded-3"
+                                        placeholder="Ziguinchor, Sénégal">
+                                </div>
+                                <div class="col-12">
+                                    <label class="small fw-medium mb-1" id="labelPassword">Mot de passe</label>
+                                    <input type="password" name="motDePasse" id="userPassword"
+                                        class="form-control rounded-3"
+                                        placeholder="Laisser vide pour ne pas modifier en édition">
+                                </div>
+                            </div>
+                            <div class="text-end mt-4">
+                                <button type="button" class="btn btn-light rounded-pill px-4 me-2"
+                                    data-bs-dismiss="modal">Annuler</button>
+                                <button type="submit"
+                                    class="btn btn-emerald rounded-pill px-4 shadow-sm text-white">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            let users = [];
+            let userModal;
+
+            document.addEventListener('DOMContentLoaded', () => {
+                userModal = new bootstrap.Modal(document.getElementById('modalUser'));
+                loadUsers();
+
+                document.getElementById('formUser').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    saveUser(new FormData(this));
+                });
+
+                document.getElementById('searchInput').addEventListener('input', function (e) {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = users.filter(u =>
+                        u.nom.toLowerCase().includes(term) ||
+                        u.prenom.toLowerCase().includes(term) ||
+                        u.email.toLowerCase().includes(term) ||
+                        u.role.toLowerCase().includes(term)
+                    );
+                    renderUsersTable(filtered);
+                });
+            });
+
+            function loadUsers() {
+                fetch('/api/utilisateurs')
+                    .then(res => res.json())
+                    .then(data => {
+                        users = data;
+                        renderUsersTable();
+                    });
+            }
+
+            function renderUsersTable(data = users) {
+                const tbody = document.getElementById('tableUsers');
+                tbody.innerHTML = '';
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Aucun utilisateur trouvé.</td></tr>';
+                    return;
+                }
+                data.forEach(u => {
+                    const initials = (u.prenom[0] + u.nom[0]).toUpperCase();
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm bg-emerald-light text-emerald rounded-circle me-3">${initials}</div>
+                                    <div>
+                                        <div class="fw-bold text-dark">${u.prenom} ${u.nom}</div>
+                                        <div class="extra-small text-muted">${u.sexe === 'M' ? 'Homme' : 'Femme'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="small text-muted">${u.email}</td>
+                            <td><span class="badge bg-emerald-soft text-emerald px-3 py-2 rounded-pill">${u.role}</span></td>
+                            <td class="small">${u.telephone || '-'}</td>
+                            <td class="text-end">
+                                <button onclick="openEditModal(${u.id})" class="btn btn-icon btn-light text-muted border-0 me-2 shadow-sm"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteUser(${u.id})" class="btn btn-icon btn-light text-danger border-0 shadow-sm"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            function openCreateModal() {
+                document.getElementById('formUser').reset();
+                document.getElementById('userId').value = '';
+                document.getElementById('modalTitle').innerText = 'Créer un Compte Staff';
+                document.getElementById('userPassword').required = true;
+                document.getElementById('labelPassword').innerText = 'Mot de passe';
+                userModal.show();
+            }
+
+            function openEditModal(id) {
+                const u = users.find(user => user.id === id);
+                if (!u) return;
+
+                document.getElementById('userId').value = u.id;
+                document.getElementById('userPrenom').value = u.prenom;
+                document.getElementById('userNom').value = u.nom;
+                document.getElementById('userEmail').value = u.email;
+                document.getElementById('userTelephone').value = u.telephone || '';
+                document.getElementById('userSexe').value = u.sexe || 'M';
+                document.getElementById('userRole').value = u.role;
+                document.getElementById('userAdresse').value = u.adresse || '';
+                document.getElementById('userPassword').value = '';
+                document.getElementById('userPassword').required = false;
+                document.getElementById('labelPassword').innerText = 'Nouveau mot de passe (optionnel)';
+                document.getElementById('modalTitle').innerText = 'Modifier le Compte';
+                userModal.show();
+            }
+
+            function saveUser(formData) {
+                const id = formData.get('id');
+                const data = Object.fromEntries(formData.entries());
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/api/utilisateurs/${id}` : '/api/utilisateurs/inscription';
+
+                fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(res => {
+                    if (res.ok) {
+                        userModal.hide();
+                        loadUsers();
+                    } else {
+                        alert('Une erreur est survenue lors de l\'enregistrement.');
+                    }
+                });
+            }
+
+            function deleteUser(id) {
+                if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
+
+                fetch(`/api/utilisateurs/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (res.ok) loadUsers();
+                        else alert('Erreur lors de la suppression.');
+                    });
+            }
+        </script>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/base :: html(title='Catalogue & Archives | SIGTMA', activePage='catalogue', pageTitle='Catalogue & Archives')}">
+
+<head></head>
+
+<body>
+    <div th:fragment="content">
+        <div class="row mb-4 align-items-end">
+            <div class="col-md-5">
+                <h5 class="fw-bold text-forest">Catalogue des Thèses Validées</h5>
+                <p class="text-muted extra-small mb-0">Consultez l'ensemble des travaux de recherche validés et
+                    archivés.</p>
+            </div>
+            <div class="col-md-7">
+                <div class="d-flex gap-2 justify-content-end">
+                    <!-- Search Input -->
+                    <div class="input-group shadow-sm" style="width: 300px;">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i
+                                class="fas fa-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control border-start-0 ps-0"
+                            placeholder="Rechercher (Titre, Auteur, Année...)" oninput="searchCatalogue()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-white py-3 border-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-mint-light text-forest rounded-pill px-3 py-2">
+                        <i class="fas fa-check-circle me-1"></i> Uniquement Validées
+                    </span>
+                    <button class="btn btn-sm btn-outline-forest" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Imprimer le Catalogue
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 text-secondary text-uppercase extra-small fw-bold">Année</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold">Titre / Sujet</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold">Étudiant</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold">Filière</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold">Encadrant</th>
+                            <th class="text-end pe-4 text-secondary text-uppercase extra-small fw-bold">Fichier</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">Chargement du catalogue...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <style>
+            @media print {
+
+                /* Masquer tout l'UI par défaut */
+                body * {
+                    visibility: hidden;
+                    background: none !important;
+                }
+
+                /* Afficher uniquement la carte du tableau */
+                .table-responsive,
+                .table-responsive * {
+                    visibility: visible;
+                }
+
+                .table-responsive {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                }
+
+                /* Masquer sidebar, navbar et boutons d'action */
+                #sidebar,
+                .navbar,
+                .row,
+                .card-header,
+                .no-print,
+                .btn,
+                .input-group,
+                .dropdown {
+                    display: none !important;
+                }
+
+                /* Optimisation PDF */
+                .table {
+                    border-collapse: collapse !important;
+                    width: 100% !important;
+                }
+
+                .table th,
+                .table td {
+                    border: 1px solid #dee2e6 !important;
+                    padding: 8px !important;
+                }
+
+                .text-forest {
+                    color: #000 !important;
+                }
+
+                .avatar-emerald {
+                    display: none !important;
+                }
+            }
+        </style>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                loadCatalogue();
+            });
+
+            let debounceTimer;
+            function searchCatalogue() {
+                const query = document.getElementById('searchInput').value;
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    loadCatalogue(query);
+                }, 300);
+            }
+
+            function loadCatalogue(query = '') {
+                // Same endpoint, but we filter client-side or assume endpoint returns all and we filter by status
+                // For a real catalog, we should request ONLY VALIDEE. 
+                // Currently our endpoint /api/theses/recherche returns everything.
+                // Best practice: Filter strictly for status === 'VALIDEE' here in frontend for now.
+
+                const url = query ? `/api/theses/recherche?motCle=${encodeURIComponent(query)}` : '/api/theses';
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        const tbody = document.getElementById('tableBody');
+                        tbody.innerHTML = '';
+
+                        // Filter only VALIDEE
+                        const validated = data.filter(d => d.status === 'VALIDEE');
+
+                        if (validated.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">Aucune thèse validée trouvée.</td></tr>`;
+                            return;
+                        }
+
+                        validated.forEach(d => {
+                            const etudiantName = d.etudiant ? `${d.etudiant.prenom} ${d.etudiant.nom}` : 'N/A';
+                            const filiere = (d.etudiant && d.etudiant.filiere) ? d.etudiant.filiere.nom : '-';
+                            const encadrantName = d.encadrant ? `${d.encadrant.grade} ${d.encadrant.prenom} ${d.encadrant.nom}` : '-';
+
+                            // Bouton d'action unique et élégant
+                            let actionsHtml = '-';
+                            if (d.fichier) {
+                                actionsHtml = `
+                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <a href="/api/theses/${d.id}/attestation" class="btn btn-sm btn-outline-emerald rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Attestation">
+                                        <i class="fas fa-stamp"></i>
+                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-emerald rounded-pill px-4 shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            Consulter
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-custom border-0 rounded-4">
+                                            <li><a class="dropdown-item py-2 px-3 small" href="/api/theses/files/${d.fichier}" target="_blank">
+                                                <i class="fas fa-eye me-2 text-emerald"></i> Lire le PDF
+                                            </a></li>
+                                            <li><a class="dropdown-item py-2 px-3 small" href="/api/theses/files/${d.fichier}?download=true">
+                                                <i class="fas fa-download me-2 text-emerald"></i> Télécharger
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>`;
+                            }
+
+                            tbody.innerHTML += `
+                                <tr class="transition-hover">
+                                    <td class="ps-4 fw-bold text-forest opacity-75">${d.annee}</td>
+                                    <td style="max-width: 350px;">
+                                        <div class="text-truncate fw-bold text-dark mb-1" title="${d.titre}">${d.titre}</div>
+                                        <span class="badge bg-light text-muted border-0 extra-small">${d.type}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-emerald me-2" style="width: 32px; height: 32px; font-size: 10px;">
+                                                ${d.etudiant ? d.etudiant.nom[0] : '?'}
+                                            </div>
+                                            <span class="small fw-medium">${etudiantName}</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-soft-emerald text-emerald rounded-pill px-3">${filiere}</span></td>
+                                    <td class="small text-muted">${encadrantName}</td>
+                                    <td class="text-end pe-4">
+                                        ${actionsHtml}
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    })
+                    .catch(err => {
+                        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Erreur: ${err.message}</td></tr>`;
+                    });
+            }
+        </script>
+    </div>
+</body>
+
+</html>

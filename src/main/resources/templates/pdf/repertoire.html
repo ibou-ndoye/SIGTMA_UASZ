@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #000;
+        }
+
+        .cover-page {
+            height: 900px;
+            /* Force height for cover */
+            text-align: center;
+            page-break-after: always;
+            padding-top: 1cm;
+        }
+
+        .cover-header {
+            margin-bottom: 1.5cm;
+        }
+
+        .cover-header p {
+            margin: 3px 0;
+            font-weight: bold;
+            font-size: 13pt;
+        }
+
+        .university-name {
+            color: #1a7a3b;
+            font-size: 15pt !important;
+        }
+
+        .rectorat {
+            color: #1a7a3b;
+        }
+
+        .divider {
+            width: 60px;
+            border-top: 1px dotted #000;
+            margin: 8px auto;
+        }
+
+        .logo-box {
+            margin: 1.5cm 0;
+        }
+
+        .logo-box img {
+            width: 140px;
+        }
+
+        .title-container {
+            border: 2px solid #a5d6a7;
+            background-color: #f1f8f1;
+            padding: 30px 15px;
+            width: 85%;
+            margin: 2cm auto;
+        }
+
+        .title-container h1 {
+            color: #1a7a3b;
+            font-size: 16pt;
+            margin: 0;
+            line-height: 1.4;
+            text-transform: uppercase;
+        }
+
+        /* Content Page */
+        .ufr-section {
+            margin-top: 0.5cm;
+            page-break-inside: avoid;
+        }
+
+        .ufr-header {
+            background-color: #cfe2f3;
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .ufr-header h2 {
+            margin: 0;
+            font-size: 12pt;
+            text-transform: uppercase;
+        }
+
+        .filiere-section {
+            margin-bottom: 25px;
+        }
+
+        .filiere-header {
+            background-color: #d9ead3;
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+            margin-bottom: 8px;
+            width: 60%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .filiere-header h3 {
+            margin: 0;
+            font-size: 10pt;
+            text-transform: uppercase;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            margin-bottom: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #eeeeee;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .col-num {
+            width: 30px;
+            text-align: center;
+        }
+
+        .col-year {
+            width: 40px;
+            text-align: center;
+        }
+
+        .col-title {
+            width: auto;
+            font-style: italic;
+        }
+
+        .col-name {
+            width: 130px;
+        }
+
+        .col-supervisor {
+            width: 130px;
+        }
+
+        .footer-text {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 7pt;
+            border-top: 0.5px solid #ccc;
+            padding-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="cover-page">
+        <div class="cover-header">
+            <p class="university-name">UNIVERSITE ASSANE SECK DE ZIGUINCHOR</p>
+            <p class="rectorat">RECTORAT</p>
+            <div class="divider">*********</div>
+            <p>BIBLIOTHEQUE CENTRALE</p>
+            <div class="divider">*****</div>
+            <p style="font-size: 9pt; font-weight: normal;">BP : 523 - Ziguinchor / Tél : 76 637 88 40</p>
+        </div>
+
+        <div class="logo-box">
+            <img th:src="${logo}" alt="" />
+        </div>
+
+        <div class="title-container">
+            <h1 th:text="'REPERTOIRE DES ' + ${typePlural} + ' DEPOSES A LA BIBLIOTHEQUE CENTRALE EN ' + ${annee}">
+                REPERTOIRE DES MEMOIRES DEPOSES A LA BIBLIOTHEQUE CENTRALE EN 2025
+            </h1>
+        </div>
+
+        <div class="footer-text" style="position: static; margin-top: 5cm; border: none;">
+            <!-- Space for cover footer if needed -->
+        </div>
+    </div>
+
+    <!-- Grouping by UFR -->
+    <div th:each="ufrEntry : ${data}">
+        <div class="ufr-section">
+            <div class="ufr-header">
+                <h2 th:text="${ufrEntry.key != null ? ufrEntry.key : 'UFR NON DÉFINIE'}">UFR</h2>
+            </div>
+
+            <!-- Grouping by Filiere within UFR -->
+            <div th:each="filiereEntry : ${ufrEntry.value}" class="filiere-section">
+                <div class="filiere-header">
+                    <h3 th:text="${filiereEntry.key != null ? filiereEntry.key : 'DÉPARTEMENT NON DÉFINI'}">FILIERE</h3>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-num">N°</th>
+                            <th class="col-year">Année</th>
+                            <th class="col-title">Titre</th>
+                            <th class="col-name">Prénom (s) et Nom</th>
+                            <th class="col-supervisor">Encadrant (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item, iter : ${filiereEntry.value}">
+                            <td class="col-num"
+                                th:text="${iter.index + 1 < 10 ? '0' + (iter.index + 1) : (iter.index + 1)}">01</td>
+                            <td class="col-year" th:text="${item.annee}">2024</td>
+                            <td class="col-title" th:text="${item.titre}">Titre</td>
+                            <td class="col-name" th:text="${item.etudiant.prenom + ' ' + item.etudiant.nom}">Etudiant
+                            </td>
+                            <td class="col-supervisor" th:text="${item.encadrant.prenom + ' ' + item.encadrant.nom}">
+                                Encadrant</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

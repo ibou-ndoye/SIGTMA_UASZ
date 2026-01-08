@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{layout/base :: html(title='Bibliothécaire | SIGTMA', activePage='dashboard', pageTitle='Gestion Documentaire')}">
+
+<head></head>
+
+<body>
+    <div th:fragment="content">
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card border-0 bg-emerald-vibrant text-white p-4 shadow-custom overflow-hidden position-relative h-100"
+                    style="border-radius: 2rem;">
+                    <div class="position-relative" style="z-index: 2;">
+                        <p class="small mb-0 opacity-75 fw-medium">Thèses Archivées</p>
+                        <h2 class="fw-bold mb-0 mt-1" id="statArchived">0</h2>
+                        <div class="mt-3">
+                            <span class="badge bg-white bg-opacity-20 rounded-pill extra-small px-3">Total Validé</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-boxes-stacked position-absolute end-0 bottom-0 mb-n3 me-n3 opacity-10 fa-6x"
+                        style="transform: rotate(-15deg);"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 bg-brand-gradient text-white p-4 shadow-custom overflow-hidden position-relative h-100"
+                    style="border-radius: 2rem;">
+                    <div class="position-relative" style="z-index: 2;">
+                        <p class="small mb-0 opacity-75 fw-medium">À Indexer</p>
+                        <h2 class="fw-bold mb-0 mt-1" id="statPending">0</h2>
+                        <div class="mt-3">
+                            <span class="badge bg-white bg-opacity-20 rounded-pill extra-small px-3">En Attente</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-hourglass-half position-absolute end-0 bottom-0 mb-n3 me-n3 opacity-10 fa-6x"
+                        style="transform: rotate(-15deg);"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 bg-mint-vibrant text-white p-4 shadow-custom overflow-hidden position-relative h-100"
+                    style="border-radius: 2rem;">
+                    <div class="position-relative" style="z-index: 2;">
+                        <p class="small mb-0 opacity-75 fw-medium">Dépôts récents</p>
+                        <h2 class="fw-bold mb-0 mt-1" id="statRecent">0</h2>
+                        <div class="mt-3">
+                            <span class="badge bg-white bg-opacity-20 rounded-pill extra-small px-3">Aujourd'hui</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-clock-rotate-left position-absolute end-0 bottom-0 mb-n3 me-n3 opacity-10 fa-6x"
+                        style="transform: rotate(-15deg);"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 bg-forest-gradient text-white p-4 shadow-custom overflow-hidden position-relative h-100"
+                    style="border-radius: 2rem;">
+                    <div class="position-relative" style="z-index: 2;">
+                        <p class="small mb-0 opacity-75 fw-medium">Capacité PDF</p>
+                        <h2 class="fw-bold mb-0 mt-1" id="statCapacity">92%</h2>
+                        <div class="mt-3">
+                            <span class="badge bg-white bg-opacity-20 rounded-pill extra-small px-3">Espace
+                                Dispo.</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-database position-absolute end-0 bottom-0 mb-n3 me-n3 opacity-10 fa-6x"
+                        style="transform: rotate(-15deg);"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-4 border-0 shadow-sm rounded-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-forest">Indexation & Validation</h5>
+                    <p class="small text-muted mb-0">Gestion du flux des thèses et mémoires (PDF)</p>
+                </div>
+            </div>
+            <div class="table-responsive px-2">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3 text-secondary text-uppercase extra-small fw-bold border-0">Document PDF
+                            </th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">Étudiant</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">Date de Dépôt</th>
+                            <th class="text-secondary text-uppercase extra-small fw-bold border-0">Statut</th>
+                            <th class="text-end pe-3 text-secondary text-uppercase extra-small fw-bold border-0">Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableTheses">
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <div class="spinner-border spinner-border-sm text-emerald me-2"></div> Chargement des
+                                dossiers...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal de Vérification -->
+        <div class="modal fade" id="modalVerify" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem; height: 90vh;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold text-forest">Vérification du Dossier</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0 d-flex flex-column h-100">
+                        <div class="row g-0 flex-grow-1 h-100">
+                            <!-- Détails -->
+                            <div class="col-md-4 bg-light p-4 overflow-auto border-end">
+                                <h6 class="text-emerald fw-bold border-bottom pb-2 mb-3">Détails</h6>
+
+                                <label class="small text-muted fw-bold">Titre</label>
+                                <p class="mb-3" id="verifyTitre">...</p>
+
+                                <label class="small text-muted fw-bold">Étudiant</label>
+                                <p class="mb-1" id="verifyEtudiant">...</p>
+                                <p class="extra-small text-muted mb-3" id="verifyEtudiantDetails">...</p>
+
+                                <label class="small text-muted fw-bold">Encadrant</label>
+                                <p class="mb-3" id="verifyEncadrant">...</p>
+
+                                <label class="small text-muted fw-bold">Filière</label>
+                                <p class="mb-3" id="verifyFiliere">...</p>
+
+                                <label class="small text-muted fw-bold">Résumé</label>
+                                <div class="p-2 bg-white border rounded extra-small text-secondary mb-3"
+                                    style="max-height: 200px; overflow-y: auto;" id="verifyResume">
+                                    ...
+                                </div>
+                            </div>
+
+                            <!-- PDF Viewer -->
+                            <div class="col-md-8 bg-dark h-100 position-relative">
+                                <div id="pdfLoader"
+                                    class="position-absolute top-50 start-50 translate-middle text-white text-center">
+                                    <div class="spinner-border text-light mb-2" role="status"></div>
+                                    <div>Chargement du PDF...</div>
+                                </div>
+                                <iframe id="verifyPdfFrame" class="w-100 h-100 border-0" src=""></iframe>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-2">
+                        <input type="hidden" id="verifyId">
+                        <span class="text-muted extra-small me-auto"><i class="fas fa-info-circle me-1"></i> Veuillez
+                            vérifier le contenu du PDF avant de valider.</span>
+                        <button type="button" class="btn btn-outline-danger rounded-pill px-4"
+                            onclick="confirmAction('rejeter')">
+                            <i class="fas fa-times me-2"></i>Rejeter
+                        </button>
+                        <button type="button" class="btn btn-emerald rounded-pill px-5 shadow-sm fw-bold"
+                            onclick="confirmAction('valider')">
+                            <i class="fas fa-check-circle me-2"></i>Valider le Dossier
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            @media print {
+
+                /* Masquer tout par défaut */
+                body * {
+                    visibility: hidden;
+                }
+
+                /* Afficher UNIQUEMENT le tableau de thèses */
+                .table-responsive,
+                .table-responsive * {
+                    visibility: visible;
+                }
+
+                .table-responsive {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                }
+
+                /* Masquer les actions et boutons pendant l'impression */
+                #sidebar,
+                .navbar,
+                .row,
+                .card-header,
+                .text-end,
+                .dropdown,
+                .btn {
+                    display: none !important;
+                }
+            }
+        </style>
+
+        <script th:inline="javascript">
+            let verifyModal;
+            document.addEventListener('DOMContentLoaded', function () {
+                verifyModal = new bootstrap.Modal(document.getElementById('modalVerify'));
+                loadStats();
+                loadTheses();
+
+                function loadStats() {
+                    fetch('/api/bibliothecaire/stats/summary')
+                        .then(res => res.json())
+                        .then(data => {
+                            document.getElementById('statArchived').innerText = data.archived;
+                            document.getElementById('statPending').innerText = data.pending;
+                            document.getElementById('statRecent').innerText = data.recentToday;
+                            document.getElementById('statCapacity').innerText = data.capacity;
+                        });
+                }
+
+                function loadTheses() {
+                    fetch('/api/theses')
+                        .then(res => res.json())
+                        .then(data => {
+                            const tbody = document.getElementById('tableTheses');
+                            if (!tbody) return;
+                            tbody.innerHTML = '';
+                            window.allTheses = data;
+
+                            const pending = data.filter(t => t.status === 'EN_ATTENTE');
+
+                            if (pending.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted small">Aucun dossier en attente de validation.</td></tr>';
+                                return;
+                            }
+
+                            pending.forEach(t => {
+                                tbody.innerHTML += `
+                                    <tr class="transition-hover">
+                                        <td class="border-0 ps-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="p-2 bg-emerald-soft text-emerald rounded-3 me-3">
+                                                    <i class="fas fa-file-pdf fa-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="d-block fw-bold text-dark small text-truncate" style="max-width: 200px;">${t.titre}</span>
+                                                    <span class="extra-small text-muted">${t.type} • ${t.annee}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="border-0 small">${t.etudiant ? t.etudiant.prenom + ' ' + t.etudiant.nom : 'N/A'}</td>
+                                        <td class="border-0 small text-muted">${t.dateDeDepot || 'N/A'}</td>
+                                        <td class="border-0"><span class="badge bg-warning text-dark border-0 rounded-pill px-3">${t.status}</span></td>
+                                        <td class="border-0 text-end pe-3">
+                                            <button class="btn btn-sm btn-emerald rounded-pill px-4 shadow-sm" onclick="openVerifyModal(${t.id})">
+                                                <i class="fas fa-search me-1"></i> Vérifier
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                        });
+                }
+
+                window.openVerifyModal = function (id) {
+                    const t = (window.allTheses || []).find(item => item.id === id);
+                    if (!t) return;
+
+                    document.getElementById('verifyId').value = t.id;
+                    document.getElementById('verifyTitre').innerText = t.titre;
+                    document.getElementById('verifyEtudiant').innerText = t.etudiant ? (t.etudiant.prenom + ' ' + t.etudiant.nom) : 'N/A';
+                    document.getElementById('verifyEtudiantDetails').innerText = t.etudiant ? (t.etudiant.matricule + ' - ' + (t.etudiant.filiere ? t.etudiant.filiere.nom : '')) : '';
+                    document.getElementById('verifyEncadrant').innerText = t.encadrant ? (t.encadrant.grade + ' ' + t.encadrant.prenom + ' ' + t.encadrant.nom) : 'N/A';
+                    document.getElementById('verifyFiliere').innerText = (t.etudiant && t.etudiant.filiere) ? t.etudiant.filiere.nom : 'N/A';
+                    document.getElementById('verifyResume').innerText = t.resume || 'Aucun résumé.';
+
+                    const iframe = document.getElementById('verifyPdfFrame');
+                    const loader = document.getElementById('pdfLoader');
+
+                    loader.style.display = 'block';
+                    iframe.style.display = 'none';
+                    iframe.src = 'about:blank';
+
+                    if (t.fichier) {
+                        setTimeout(() => {
+                            iframe.src = '/api/theses/files/' + encodeURIComponent(t.fichier);
+                        }, 100);
+
+                        iframe.onload = function () {
+                            loader.style.display = 'none';
+                            iframe.style.display = 'block';
+                        };
+                    } else {
+                        loader.innerHTML = '<div class="text-warning">Aucun fichier PDF joint.</div>';
+                    }
+
+                    verifyModal.show();
+                }
+
+                window.confirmAction = function (action) {
+                    const id = document.getElementById('verifyId').value;
+                    if (!id) return;
+
+                    if (!confirm(`Confirmer ${action === 'valider' ? 'la validation' : 'le rejet'} de ce dossier ?`)) return;
+
+                    fetch(`/api/theses/${id}/${action}`, { method: 'POST' })
+                        .then(res => {
+                            if (res.ok) {
+                                verifyModal.hide();
+                                alert(`Dossier ${action === 'valider' ? 'validé' : 'rejeté'} avec succès !`);
+                                loadTheses();
+                                loadStats();
+                            } else {
+                                alert('Une erreur est survenue.');
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Erreur de communication avec le serveur.');
+                        });
+                }
+            });
+        </script>
+    </div>
+</body>
+
+</html>
